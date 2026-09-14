@@ -1,5 +1,6 @@
 from app.github.client import GitHubClient
-from app.agents.security_agent import SecurityAgent
+from app.services.review_service import ReviewService
+
 
 def main():
     github_client = GitHubClient()
@@ -30,22 +31,24 @@ def main():
         code_diff += "\n--- Diff ---\n"
         code_diff += file.patch or "No patch available."
 
-    print("\nSending code to Security Agent...")
+    print("\nStarting CodeSentinel review...")
 
-    security_agent = SecurityAgent()
+    review_service = ReviewService()
 
-    review = security_agent.review(code_diff)
+    reviews = review_service.review(code_diff)
 
     print("\n================================")
     print("       CODESENTINEL REVIEW")
     print("================================")
 
-    print("\n--- SECURITY REVIEW ---")
+    for review_type, review in reviews.items():
 
-    if not review.issues:
-        print("No significant security vulnerabilities found.")
+        print(f"\n--- {review_type.upper()} REVIEW ---")
 
-    else:
+        if not review.issues:
+            print(f"No significant {review_type} issues found.")
+            continue
+
         for index, issue in enumerate(review.issues, start=1):
             print(f"\nIssue {index}")
             print(f"Severity: {issue.severity}")
