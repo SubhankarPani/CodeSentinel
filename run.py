@@ -1,6 +1,5 @@
 from app.github.client import GitHubClient
-from app.agents.style_agent import StyleAgent
-
+from app.agents.logic_agent import LogicAgent
 
 def main():
     github_client = GitHubClient()
@@ -31,17 +30,17 @@ def main():
         code_diff += "\n--- Diff ---\n"
         code_diff += file.patch or "No patch available."
 
-    print("\nSending code to Style Agent...")
+    print("\nSending code to Logic Agent...")
 
-    style_agent = StyleAgent()
+    logic_agent = LogicAgent()
 
-    review = style_agent.review(code_diff)
+    review = logic_agent.review(code_diff)
 
     print("\n================================")
     print("       CODESENTINEL REVIEW")
     print("================================")
 
-    print("\n--- STYLE REVIEW ---")
+    print("\n--- LOGIC REVIEW ---")
 
     if not review.issues:
         print("No significant style issues found.")
