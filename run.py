@@ -1,5 +1,5 @@
 from app.github.client import GitHubClient
-from app.agents.logic_agent import LogicAgent
+from app.agents.security_agent import SecurityAgent
 
 def main():
     github_client = GitHubClient()
@@ -30,20 +30,20 @@ def main():
         code_diff += "\n--- Diff ---\n"
         code_diff += file.patch or "No patch available."
 
-    print("\nSending code to Logic Agent...")
+    print("\nSending code to Security Agent...")
 
-    logic_agent = LogicAgent()
+    security_agent = SecurityAgent()
 
-    review = logic_agent.review(code_diff)
+    review = security_agent.review(code_diff)
 
     print("\n================================")
     print("       CODESENTINEL REVIEW")
     print("================================")
 
-    print("\n--- LOGIC REVIEW ---")
+    print("\n--- SECURITY REVIEW ---")
 
     if not review.issues:
-        print("No significant style issues found.")
+        print("No significant security vulnerabilities found.")
 
     else:
         for index, issue in enumerate(review.issues, start=1):
