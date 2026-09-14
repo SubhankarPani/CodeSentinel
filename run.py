@@ -10,12 +10,17 @@ def main():
 
     print("Fetching Pull Request...")
 
-    files = github_client.get_pull_request_files(
-        repository_name,
-        pull_number
+    files = list(
+        github_client.get_pull_request_files(
+            repository_name,
+            pull_number
+        )
     )
 
-    # Combine all file diffs into one string
+    print("Pull Request retrieved successfully!")
+    print(f"Files changed: {len(files)}")
+
+    # Combine all file diffs
     code_diff = ""
 
     for file in files:
@@ -25,9 +30,6 @@ def main():
         code_diff += f"Deletions: {file.deletions}\n"
         code_diff += "\n--- Diff ---\n"
         code_diff += file.patch or "No patch available."
-
-    print("Pull Request retrieved successfully!")
-    print(f"Files changed: {len(list(files))}")
 
     print("\nSending code to Style Agent...")
 
@@ -40,7 +42,19 @@ def main():
     print("================================")
 
     print("\n--- STYLE REVIEW ---")
-    print(review)
+
+    if not review.issues:
+        print("No significant style issues found.")
+
+    else:
+        for index, issue in enumerate(review.issues, start=1):
+            print(f"\nIssue {index}")
+            print(f"Severity: {issue.severity}")
+            print(f"Category: {issue.category}")
+            print(f"File: {issue.file}")
+            print(f"Line: {issue.line}")
+            print(f"Description: {issue.description}")
+            print(f"Recommendation: {issue.recommendation}")
 
 
 if __name__ == "__main__":

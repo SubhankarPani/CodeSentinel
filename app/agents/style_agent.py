@@ -1,6 +1,7 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.config import GEMINI_API_KEY
+from app.models.review import ReviewResult
 
 
 class StyleAgent:
@@ -10,10 +11,14 @@ class StyleAgent:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-3.5-flash",
             google_api_key=GEMINI_API_KEY,
-            temperature=0,
+            temperature=0
         )
 
-    def review(self, code_diff: str) -> str:
+        self.structured_llm = self.llm.with_structured_output(
+            ReviewResult
+        )
+
+    def review(self, code_diff: str) -> ReviewResult:
 
         prompt = f"""
 You are a senior Python code reviewer.
@@ -37,21 +42,21 @@ Do NOT report:
 - Functional correctness issues
 
 For every issue you find, provide:
+- severity: LOW, MEDIUM, or HIGH
+- category
+- file
+- line if identifiable
+- description
+- recommendation
 
-1. Severity: LOW, MEDIUM, or HIGH
-2. File/line if identifiable
-3. Explanation
-4. Suggested improvement
-
-If there are no style issues, say:
-
-"No significant style issues found."
+If there are no significant style issues,
+return an empty issues list.
 
 Code diff:
 
 {code_diff}
 """
 
-        response = self.llm.invoke(prompt)
+        result = self.structured_llm.invoke(prompt)
 
-        return response.content
+        return result
