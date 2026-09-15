@@ -37,26 +37,30 @@ def main():
 
     reviews = review_service.review(code_diff)
 
+    final_review = reviews["final"]
+
     print("\n================================")
     print("       CODESENTINEL REVIEW")
     print("================================")
 
-    for review_type, review in reviews.items():
+    if not final_review.issues:
+        print("\nNo significant issues found.")
+        return
 
-        print(f"\n--- {review_type.upper()} REVIEW ---")
+    print(f"\nFound {len(final_review.issues)} issue(s).")
 
-        if not review.issues:
-            print(f"No significant {review_type} issues found.")
-            continue
+    for index, issue in enumerate(final_review.issues, start=1):
+        print(f"\nIssue {index}")
+        print(f"Severity: {issue.severity}")
+        print(f"Category: {issue.category}")
+        print(f"File: {issue.file}")
+        print(f"Line: {issue.line}")
+        print(f"\nDescription:")
+        print(issue.description)
+        print(f"\nRecommendation:")
+        print(issue.recommendation)
 
-        for index, issue in enumerate(review.issues, start=1):
-            print(f"\nIssue {index}")
-            print(f"Severity: {issue.severity}")
-            print(f"Category: {issue.category}")
-            print(f"File: {issue.file}")
-            print(f"Line: {issue.line}")
-            print(f"Description: {issue.description}")
-            print(f"Recommendation: {issue.recommendation}")
+        print("\n" + "-" * 50)
 
 
 if __name__ == "__main__":

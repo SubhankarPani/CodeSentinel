@@ -1,22 +1,12 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-from app.config import GEMINI_API_KEY
+from app.agents.base_agent import BaseAgent
 from app.models.review import ReviewResult
 
 
-class StyleAgent:
+class StyleAgent(BaseAgent):
     """AI agent responsible for reviewing code style and quality."""
 
     def __init__(self):
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-3.5-flash",
-            google_api_key=GEMINI_API_KEY,
-            temperature=0
-        )
-
-        self.structured_llm = self.llm.with_structured_output(
-            ReviewResult
-        )
+        super().__init__()
 
     def review(self, code_diff: str) -> ReviewResult:
 
@@ -57,6 +47,6 @@ Code diff:
 {code_diff}
 """
 
-        result = self.structured_llm.invoke(prompt)
+        result = self.invoke_with_retry(prompt)
 
         return result
