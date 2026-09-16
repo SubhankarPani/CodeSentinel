@@ -19,7 +19,9 @@ class GitHubClient:
         pull_number: int
     ):
         """Return a specific pull request."""
+
         repository = self.get_repository(repository_name)
+
         return repository.get_pull(pull_number)
 
     def get_pull_request_files(
@@ -28,6 +30,7 @@ class GitHubClient:
         pull_number: int
     ):
         """Return files changed in a pull request."""
+
         pull_request = self.get_pull_request(
             repository_name,
             pull_number
@@ -35,3 +38,17 @@ class GitHubClient:
 
         return pull_request.get_files()
 
+    def post_pull_request_comment(
+        self,
+        repository_name: str,
+        pull_number: int,
+        comment: str
+    ):
+        """Post a comment on a GitHub pull request."""
+
+        pull_request = self.get_pull_request(
+            repository_name,
+            pull_number
+        )
+
+        return pull_request.create_issue_comment(comment)
