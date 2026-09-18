@@ -10,6 +10,7 @@ class BaseAgent:
     """Base class for CodeSentinel AI agents."""
 
     def __init__(self):
+
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-3.5-flash",
             google_api_key=GEMINI_API_KEY,
@@ -20,26 +21,83 @@ class BaseAgent:
             ReviewResult
         )
 
-    def invoke_with_retry(self, prompt: str, max_retries: int = 3):
+    def invoke_with_retry(
+        self,
+        prompt: str,
+        max_retries: int = 3
+    ):
         """Call Gemini and retry temporary failures."""
 
         for attempt in range(max_retries):
+
             try:
-                return self.structured_llm.invoke(prompt)
+
+                print(
+                    f"Calling Gemini "
+                    f"(attempt {attempt + 1}/{max_retries})..."
+                )
+
+                # Show prompt size for debugging
+                print(
+                    f"Prompt characters: {len(prompt):,}"
+                )
+
+                # Approximate token count.
+                # Rough estimate: 1 token ≈ 4 characters.
+                estimated_tokens = len(prompt) // 4
+
+                print(
+                    f"Estimated input tokens: "
+                    f"{estimated_tokens:,}"
+                )
+
+                print("Sending request to Gemini...")
+
+                result = self.structured_llm.invoke(prompt)
+
+                print("✅ Gemini response received.")
+
+                return result
 
             except Exception as error:
 
+                print("\n❌ Gemini request error:")
+                print(f"Error type: {type(error).__name__}")
+                print(f"Error message: {error}")
+                print()
+
                 error_message = str(error).lower()
 
-                # Quota errors will not be fixed by retrying.
-                if "quota" in error_message or "429" in error_message:
+                # --------------------------------------------------
+                # QUOTA / RATE LIMIT
+                # --------------------------------------------------
+
+                if (
+                    "quota" in error_message
+                    or "429" in error_message
+                    or "resource_exhausted" in error_message
+                    or "too many requests" in error_message
+                ):
+
                     raise RuntimeError(
-                        "Gemini API quota exceeded."
+                        "Gemini API quota/rate limit exceeded."
                     ) from error
 
-                # Retry temporary errors.
+                # --------------------------------------------------
+                # LAST ATTEMPT
+                # --------------------------------------------------
+
                 if attempt == max_retries - 1:
-                    raise error
+
+                    print(
+                        "❌ Maximum Gemini retry attempts reached."
+                    )
+
+                    raise
+
+                # --------------------------------------------------
+                # RETRY
+                # --------------------------------------------------
 
                 wait_time = 2 ** attempt
 

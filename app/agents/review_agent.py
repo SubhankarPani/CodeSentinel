@@ -46,5 +46,6 @@ Rules:
 Return the final review using the ReviewResult format.
 """
 
-        result = self.structured_llm.invoke(prompt)
+        result = self.invoke_with_retry(prompt)
+
         return result

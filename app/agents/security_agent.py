@@ -58,5 +58,6 @@ Code diff:
 {code_diff}
 """
 
-        result = self.structured_llm.invoke(prompt)
+        result = self.invoke_with_retry(prompt)
+
         return result
