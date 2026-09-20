@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.config import TEST_MODE
+from app.config import POST_TO_GITHUB
 from app.github.client import GitHubClient
 from app.github.formatter import format_review_as_markdown
 from app.services.review_service import ReviewService
@@ -11,6 +12,22 @@ app = FastAPI(
     title="CodeSentinel",
     description="Autonomous AI-powered GitHub Pull Request Code Review",
     version="1.0.0"
+)
+
+
+# --------------------------------
+# CORS
+# --------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -91,7 +108,6 @@ def review_pull_request(request: ReviewRequest):
         reviews = review_service.review(code_diff)
 
         if "final" not in reviews:
-
             raise HTTPException(
                 status_code=500,
                 detail="CodeSentinel could not generate a final review."
@@ -110,22 +126,33 @@ def review_pull_request(request: ReviewRequest):
 
 
         # --------------------------------
-        # 5. Post review to GitHub
+        # 5. Post to GitHub if enabled
         # --------------------------------
 
-        print("\nPosting review to GitHub...")
+        comment_url = None
 
-        comment = github_client.post_pull_request_comment(
-            request.repository,
-            request.pull_number,
-            github_comment
-        )
+        if POST_TO_GITHUB:
 
-        print("✅ Review posted successfully!")
+            print("\nPosting review to GitHub...")
+
+            comment = github_client.post_pull_request_comment(
+                request.repository,
+                request.pull_number,
+                github_comment
+            )
+
+            comment_url = comment.html_url
+
+            print("✅ Review posted successfully!")
+
+        else:
+
+            print("\n⚠️ POST_TO_GITHUB is disabled.")
+            print("Review will not be posted to GitHub.")
 
 
         # --------------------------------
-        # 6. Return API response
+        # 6. Return response
         # --------------------------------
 
         return {
@@ -133,7 +160,15 @@ def review_pull_request(request: ReviewRequest):
             "repository": request.repository,
             "pull_number": request.pull_number,
             "issues_found": len(final_review.issues),
-            "comment_url": comment.html_url,
+            "comment_url": comment_url,
+
+            "agents": {
+                "style": reviews["style"].model_dump(),
+                "logic": reviews["logic"].model_dump(),
+                "security": reviews["security"].model_dump(),
+                "final": reviews["final"].model_dump()
+            },
+
             "review": final_review.model_dump()
         }
 

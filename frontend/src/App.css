@@ -1,0 +1,173 @@
+.app {
+  min-height: 100vh;
+  background: #f5f7fb;
+  color: #1f2937;
+}
+
+.header {
+  text-align: center;
+  padding: 50px 20px 30px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 42px;
+}
+
+.header p {
+  margin-top: 10px;
+  color: #6b7280;
+  font-size: 18px;
+}
+
+.container {
+  width: 90%;
+  max-width: 850px;
+  margin: auto;
+}
+
+.review-form {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.review-form label {
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+
+.review-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.review-form button {
+  margin-top: 25px;
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  background: #111827;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.review-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  margin-top: 25px;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.error {
+  margin-top: 25px;
+  padding: 15px;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 8px;
+}
+
+.results {
+  margin-top: 30px;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.results-header h2 {
+  margin: 0;
+}
+
+.results-header span {
+  font-weight: 600;
+}
+
+.issue-card {
+  background: white;
+  padding: 25px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.issue-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.severity {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.category {
+  background: #e5e7eb;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+.issue-card h3 {
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+.github-link {
+  display: inline-block;
+  margin-bottom: 40px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.agent-pipeline {
+  background: white;
+  padding: 25px;
+  margin-bottom: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.agent-pipeline h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.agents {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.agent {
+  padding: 15px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.agent-check {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
