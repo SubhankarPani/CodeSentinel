@@ -151,6 +151,10 @@
 .agent-pipeline h2 {
   margin-top: 0;
   margin-bottom: 20px;
+  color: #111827;
+  font-size: 26px;
+  font-weight: 700;
+  opacity: 1;
 }
 
 .agents {
@@ -170,4 +174,107 @@
 .agent-check {
   font-size: 22px;
   margin-bottom: 8px;
+}
+/* -------------------------------- */
+/* AI REVIEW PIPELINE */
+/* -------------------------------- */
+
+.agent-pipeline h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #111827;
+  font-size: 26px;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.results-header h2 {
+  color: #111827;
+  opacity: 1;
+}
+
+.specialist-section {
+  margin-top: 30px;
+}
+
+.specialist-section h2 {
+  color: #111827;
+  font-size: 26px;
+  margin-bottom: 20px;
+  opacity: 1;
+}
+
+.agent-result {
+  background: white;
+  padding: 25px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.agent-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.agent-result-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 21px;
+}
+
+.agent-result-header p {
+  margin-top: 6px;
+  color: #6b7280;
+}
+
+.finding-count {
+  background: #e5e7eb;
+  padding: 7px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.no-issues {
+  padding: 15px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #166534;
+  font-weight: 600;
+}
+
+.agent-issue {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.agent-issue h4 {
+  margin-top: 18px;
+  margin-bottom: 5px;
+  color: #111827;
+}
+
+.agent-issue p {
+  line-height: 1.6;
+}
+
+.review-agent {
+  border: 2px solid #111827;
+}
+
+.final-review {
+  margin-top: 35px;
+}
+
+.final-review > .results-header {
+  margin-bottom: 20px;
+}
+
+.final-review .issue-card {
+  margin-bottom: 20px;
 }
