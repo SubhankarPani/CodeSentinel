@@ -9,11 +9,19 @@ from app.models.review import ReviewFinding, ReviewResult
 class ReviewService:
     """Coordinates all CodeSentinel review agents."""
 
-    def __init__(self):
+    def __init__(self, progress_callback=None):
         self.style_agent = StyleAgent()
         self.logic_agent = LogicAgent()
         self.security_agent = SecurityAgent()
         self.review_agent = ReviewAgent()
+
+        self.progress_callback = progress_callback
+
+    def update_progress(self, status):
+        """Send current agent status to the caller."""
+
+        if self.progress_callback:
+            self.progress_callback(status)
 
     def create_test_review(self) -> ReviewResult:
         return ReviewResult(
@@ -59,29 +67,46 @@ class ReviewService:
             # STYLE AGENT
             # --------------------------------
 
+            self.update_progress("style_running")
+
             print("\nRunning Style Agent...")
+
             style_review = self.style_agent.review(code_diff)
+
+            self.update_progress("style_completed")
 
 
             # --------------------------------
             # LOGIC AGENT
             # --------------------------------
 
+            self.update_progress("logic_running")
+
             print("Running Logic Agent...")
+
             logic_review = self.logic_agent.review(code_diff)
+
+            self.update_progress("logic_completed")
 
 
             # --------------------------------
             # SECURITY AGENT
             # --------------------------------
 
+            self.update_progress("security_running")
+
             print("Running Security Agent...")
+
             security_review = self.security_agent.review(code_diff)
+
+            self.update_progress("security_completed")
 
 
             # --------------------------------
             # REVIEW AGENT
             # --------------------------------
+
+            self.update_progress("review_running")
 
             print("Running Review Agent...")
 
@@ -91,9 +116,11 @@ class ReviewService:
                 security_review
             )
 
+            self.update_progress("review_completed")
+
 
             # --------------------------------
-            # RETURN ALL RESULTS
+            # RETURN RESULTS
             # --------------------------------
 
             return {
@@ -125,4 +152,4 @@ class ReviewService:
 
             print("=" * 50)
 
-            return {}
+            raise

@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException
+import uuid
+
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -31,10 +33,25 @@ app.add_middleware(
 )
 
 
+# --------------------------------
+# In-memory job storage
+# --------------------------------
+
+review_jobs = {}
+
+
+# --------------------------------
+# Request model
+# --------------------------------
+
 class ReviewRequest(BaseModel):
     repository: str
     pull_number: int
 
+
+# --------------------------------
+# Basic endpoints
+# --------------------------------
 
 @app.get("/")
 def root():
@@ -50,39 +67,45 @@ def health():
     }
 
 
-@app.post("/review")
-def review_pull_request(request: ReviewRequest):
+# --------------------------------
+# Background review
+# --------------------------------
 
+def run_review_job(
+    job_id: str,
+    repository: str,
+    pull_number: int
+):
     try:
-        # --------------------------------
-        # 1. Fetch Pull Request
-        # --------------------------------
+
+        review_jobs[job_id]["status"] = "fetching_pr"
 
         github_client = GitHubClient()
 
         print(
-            f"Fetching PR #{request.pull_number} "
-            f"from {request.repository}..."
+            f"Fetching PR #{pull_number} "
+            f"from {repository}..."
         )
 
         files = list(
             github_client.get_pull_request_files(
-                request.repository,
-                request.pull_number
+                repository,
+                pull_number
             )
         )
 
         if not files:
-            raise HTTPException(
-                status_code=400,
-                detail="No changed files found in the Pull Request."
+            review_jobs[job_id]["status"] = "failed"
+            review_jobs[job_id]["error"] = (
+                "No changed files found in the Pull Request."
             )
+            return
 
         print(f"Files changed: {len(files)}")
 
 
         # --------------------------------
-        # 2. Build code diff
+        # Build code diff
         # --------------------------------
 
         code_diff = ""
@@ -98,26 +121,36 @@ def review_pull_request(request: ReviewRequest):
 
 
         # --------------------------------
-        # 3. Run CodeSentinel
+        # Run review
         # --------------------------------
+
+        review_jobs[job_id]["status"] = "reviewing"
 
         print("\nStarting CodeSentinel review...")
 
-        review_service = ReviewService()
+        def update_job_status(status):
+            review_jobs[job_id]["status"] = status
+
+
+        review_service = ReviewService(
+            progress_callback=update_job_status
+        )
 
         reviews = review_service.review(code_diff)
 
         if "final" not in reviews:
-            raise HTTPException(
-                status_code=500,
-                detail="CodeSentinel could not generate a final review."
+
+            review_jobs[job_id]["status"] = "failed"
+            review_jobs[job_id]["error"] = (
+                "CodeSentinel could not generate a final review."
             )
+            return
 
         final_review = reviews["final"]
 
 
         # --------------------------------
-        # 4. Format GitHub comment
+        # Format GitHub comment
         # --------------------------------
 
         github_comment = format_review_as_markdown(
@@ -126,7 +159,7 @@ def review_pull_request(request: ReviewRequest):
 
 
         # --------------------------------
-        # 5. Post to GitHub if enabled
+        # Post GitHub comment
         # --------------------------------
 
         comment_url = None
@@ -136,8 +169,8 @@ def review_pull_request(request: ReviewRequest):
             print("\nPosting review to GitHub...")
 
             comment = github_client.post_pull_request_comment(
-                request.repository,
-                request.pull_number,
+                repository,
+                pull_number,
                 github_comment
             )
 
@@ -145,20 +178,17 @@ def review_pull_request(request: ReviewRequest):
 
             print("✅ Review posted successfully!")
 
-        else:
-
-            print("\n⚠️ POST_TO_GITHUB is disabled.")
-            print("Review will not be posted to GitHub.")
-
 
         # --------------------------------
-        # 6. Return response
+        # Save result
         # --------------------------------
 
-        return {
+        review_jobs[job_id]["status"] = "completed"
+
+        review_jobs[job_id]["result"] = {
             "status": "success",
-            "repository": request.repository,
-            "pull_number": request.pull_number,
+            "repository": repository,
+            "pull_number": pull_number,
             "issues_found": len(final_review.issues),
             "comment_url": comment_url,
 
@@ -173,17 +203,74 @@ def review_pull_request(request: ReviewRequest):
         }
 
 
-    except HTTPException:
-        raise
-
-
     except Exception as error:
 
         print(
             f"\n❌ CodeSentinel error: {error}"
         )
 
+        review_jobs[job_id]["status"] = "failed"
+
+        review_jobs[job_id]["error"] = str(error)
+
+
+# --------------------------------
+# Start review
+# --------------------------------
+
+@app.post("/review")
+def start_review(
+    request: ReviewRequest,
+    background_tasks: BackgroundTasks
+):
+
+    job_id = str(uuid.uuid4())
+
+    review_jobs[job_id] = {
+        "status": "queued",
+        "result": None,
+        "error": None
+    }
+
+    background_tasks.add_task(
+        run_review_job,
+        job_id,
+        request.repository,
+        request.pull_number
+    )
+
+    return {
+        "status": "started",
+        "job_id": job_id,
+        "message": "CodeSentinel review started."
+    }
+
+
+# --------------------------------
+# Check review status
+# --------------------------------
+
+@app.get("/review/{job_id}")
+def get_review_status(job_id: str):
+
+    if job_id not in review_jobs:
+
         raise HTTPException(
-            status_code=500,
-            detail=str(error)
+            status_code=404,
+            detail="Review job not found."
         )
+
+    job = review_jobs[job_id]
+
+    response = {
+        "job_id": job_id,
+        "status": job["status"]
+    }
+
+    if job["status"] == "completed":
+        response["result"] = job["result"]
+
+    if job["status"] == "failed":
+        response["error"] = job["error"]
+
+    return response

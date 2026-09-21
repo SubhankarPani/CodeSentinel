@@ -14,7 +14,7 @@ interface AgentReview {
   issues: ReviewIssue[];
 }
 
-interface ReviewResponse {
+interface ReviewResult {
   status: string;
   repository: string;
   pull_number: number;
@@ -31,6 +31,13 @@ interface ReviewResponse {
   review: AgentReview;
 }
 
+interface JobResponse {
+  job_id: string;
+  status: string;
+  result?: ReviewResult;
+  error?: string;
+}
+
 function App() {
   const [repository, setRepository] = useState(
     "SubhankarPani/CodeSentinel"
@@ -40,24 +47,110 @@ function App() {
 
   const [loading, setLoading] = useState(false);
 
+  const [jobStatus, setJobStatus] = useState("");
+
   const [result, setResult] =
-    useState<ReviewResponse | null>(null);
+    useState<ReviewResult | null>(null);
 
   const [error, setError] = useState("");
+
+  const agents = [
+    {
+      name: "Style Agent",
+      key: "style" as const,
+      runningStatus: "style_running",
+      completedStatus: "style_completed",
+      description:
+        "Checks code quality, readability and coding style.",
+    },
+    {
+      name: "Logic Agent",
+      key: "logic" as const,
+      runningStatus: "logic_running",
+      completedStatus: "logic_completed",
+      description:
+        "Checks logic, conditions, edge cases and correctness.",
+    },
+    {
+      name: "Security Agent",
+      key: "security" as const,
+      runningStatus: "security_running",
+      completedStatus: "security_completed",
+      description:
+        "Checks vulnerabilities, secrets and unsafe code.",
+    },
+  ];
+
+  const pollJobStatus = async (jobId: string) => {
+    const maxAttempts = 60;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/review/${jobId}`
+        );
+
+        const data: JobResponse =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Failed to get review status"
+          );
+        }
+
+        setJobStatus(data.status);
+
+        if (data.status === "completed") {
+          setResult(data.result || null);
+          setLoading(false);
+          return;
+        }
+
+        if (data.status === "failed") {
+          throw new Error(
+            data.error || "CodeSentinel review failed"
+          );
+        }
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, 2000)
+        );
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Something went wrong"
+        );
+
+        setLoading(false);
+        return;
+      }
+    }
+
+    setError(
+      "Review is taking too long. Please try again."
+    );
+
+    setLoading(false);
+  };
 
   const handleReview = async () => {
     setLoading(true);
     setError("");
     setResult(null);
+    setJobStatus("starting");
 
     try {
       const response = await fetch(
         "http://127.0.0.1:8000/review",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             repository: repository,
             pull_number: Number(pullNumber),
@@ -65,54 +158,39 @@ function App() {
         }
       );
 
-      const data = await response.json();
+      const data: JobResponse =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Review failed"
+          data.error || "Failed to start review"
         );
       }
 
-      setResult(data);
+      setJobStatus("queued");
+
+      await pollJobStatus(data.job_id);
+
     } catch (error) {
       setError(
         error instanceof Error
           ? error.message
           : "Something went wrong"
       );
-    } finally {
+
       setLoading(false);
     }
   };
-
-  const agents = [
-    {
-      name: "Style Agent",
-      key: "style" as const,
-      description:
-        "Checks code quality, readability and coding style.",
-    },
-    {
-      name: "Logic Agent",
-      key: "logic" as const,
-      description:
-        "Checks logic, conditions, edge cases and correctness.",
-    },
-    {
-      name: "Security Agent",
-      key: "security" as const,
-      description:
-        "Checks vulnerabilities, secrets and unsafe code.",
-    },
-  ];
 
   const renderIssue = (
     issue: ReviewIssue,
     index: number
   ) => {
     return (
-      <div className="agent-issue" key={index}>
-
+      <div
+        className="agent-issue"
+        key={index}
+      >
         <div className="issue-header">
 
           <span className="severity">
@@ -150,15 +228,12 @@ function App() {
         <p>
           {issue.recommendation}
         </p>
-
       </div>
     );
   };
 
   return (
     <div className="app">
-
-      {/* HEADER */}
 
       <header className="header">
 
@@ -172,10 +247,7 @@ function App() {
 
       </header>
 
-
       <main className="container">
-
-        {/* REVIEW FORM */}
 
         <section className="review-form">
 
@@ -190,6 +262,7 @@ function App() {
               setRepository(e.target.value)
             }
             placeholder="owner/repository"
+            disabled={loading}
           />
 
           <label>
@@ -203,6 +276,7 @@ function App() {
               setPullNumber(e.target.value)
             }
             placeholder="1"
+            disabled={loading}
           />
 
           <button
@@ -216,31 +290,30 @@ function App() {
 
         </section>
 
-
-        {/* ERROR */}
-
         {error && (
           <div className="error">
             ❌ {error}
           </div>
         )}
 
-
-        {/* LOADING */}
-
         {loading && (
           <div className="loading">
-            🤖 CodeSentinel is analyzing the Pull Request...
+
+            🤖 CodeSentinel is analyzing the
+            Pull Request...
+
+            <p>
+              Status:{" "}
+              <strong>
+                {jobStatus}
+              </strong>
+            </p>
+
           </div>
         )}
 
-
-        {/* RESULTS */}
-
         {result && (
           <section className="results">
-
-            {/* AI PIPELINE */}
 
             <div className="agent-pipeline">
 
@@ -250,28 +323,56 @@ function App() {
 
               <div className="agents">
 
-                {agents.map((agent) => (
+                {agents.map((agent) => {
 
-                  <div
-                    className="agent"
-                    key={agent.key}
-                  >
+                                const isRunning =
+                                  jobStatus === agent.runningStatus;
 
-                    <div className="agent-check">
-                      ✓
-                    </div>
+                                const isCompleted =
+                                  jobStatus === agent.completedStatus ||
+                                  result !== null;
 
-                    <strong>
-                      {agent.name}
-                    </strong>
+                                return (
+                                  <div
+                                      className={`agent ${
+                                        jobStatus === "review_running"
+                                          ? "agent-running"
+                                          : jobStatus === "review_completed" ||
+                                            result !== null
+                                          ? "agent-completed"
+                                          : "agent-pending"
+                                      }`}
+                                    >
 
-                    <p>
-                      {agent.description}
-                    </p>
+                                      <div className="agent-check">
 
-                  </div>
+                                        {jobStatus === "review_running"
+                                          ? "⟳"
+                                          : jobStatus === "review_completed" ||
+                                            result !== null
+                                          ? "✓"
+                                          : "○"}
 
-                ))}
+                                      </div>
+
+                                      <strong>
+                                        Review Agent
+                                      </strong>
+
+                                      <p>
+
+                                        {jobStatus === "review_running"
+                                          ? "Combining findings..."
+                                          : jobStatus === "review_completed" ||
+                                            result !== null
+                                          ? "Completed"
+                                          : "Waiting..."}
+
+                                      </p>
+
+                                    </div>
+                                );
+                              })}
 
                 <div className="agent review-agent">
 
@@ -284,7 +385,8 @@ function App() {
                   </strong>
 
                   <p>
-                    Combines all findings into the final review.
+                    Combines all findings into
+                    the final review.
                   </p>
 
                 </div>
@@ -292,9 +394,6 @@ function App() {
               </div>
 
             </div>
-
-
-            {/* SPECIALIST AGENTS */}
 
             <div className="specialist-section">
 
@@ -328,19 +427,23 @@ function App() {
                       </div>
 
                       <span className="finding-count">
+
                         {agentReview.issues.length}{" "}
+
                         {agentReview.issues.length === 1
                           ? "finding"
                           : "findings"}
+
                       </span>
 
                     </div>
 
-
                     {agentReview.issues.length === 0 ? (
 
                       <div className="no-issues">
+
                         ✓ No issues found by this agent.
+
                       </div>
 
                     ) : (
@@ -361,9 +464,6 @@ function App() {
 
             </div>
 
-
-            {/* FINAL REVIEW */}
-
             <div className="final-review">
 
               <div className="results-header">
@@ -377,7 +477,6 @@ function App() {
                 </span>
 
               </div>
-
 
               {result.review.issues.map(
                 (issue, index) => (
@@ -399,7 +498,6 @@ function App() {
 
                     </div>
 
-
                     {issue.file && (
                       <p>
                         <strong>
@@ -408,7 +506,6 @@ function App() {
                         {issue.file}
                       </p>
                     )}
-
 
                     {issue.line && (
                       <p>
@@ -419,7 +516,6 @@ function App() {
                       </p>
                     )}
 
-
                     <h3>
                       Description
                     </h3>
@@ -427,7 +523,6 @@ function App() {
                     <p>
                       {issue.description}
                     </p>
-
 
                     <h3>
                       Recommendation
@@ -438,17 +533,12 @@ function App() {
                     </p>
 
                   </div>
-
                 )
               )}
 
             </div>
 
-
-            {/* GITHUB */}
-
             {result.comment_url && (
-
               <a
                 href={result.comment_url}
                 target="_blank"
@@ -457,7 +547,6 @@ function App() {
               >
                 View GitHub Comment →
               </a>
-
             )}
 
           </section>
