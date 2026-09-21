@@ -14,7 +14,7 @@ class BaseAgent:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-3.5-flash",
             google_api_key=GEMINI_API_KEY,
-            temperature=0
+            temperature=0,
             timeout=60,
             max_retries=1
         )
