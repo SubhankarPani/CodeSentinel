@@ -84,7 +84,7 @@ function App() {
   ];
 
   const pollJobStatus = async (jobId: string) => {
-    const maxAttempts = 60;
+    const maxAttempts = 300;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
