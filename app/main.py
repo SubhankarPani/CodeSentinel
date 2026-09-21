@@ -25,8 +25,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
-        "https://codesentinel-ai-blush.vercel.app"
+        "http://127.0.0.1:5173",
+        "https://codesentinel-ai-blush.vercel.app",
         "https://codesentinel-nmg28xegl-subhankar-panis-projects.vercel.app"
     ],
     allow_credentials=True,
