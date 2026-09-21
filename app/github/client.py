@@ -7,6 +7,8 @@ class GitHubClient:
     """Handles communication with the GitHub API."""
 
     def __init__(self):
+        print("GITHUB_TOKEN loaded:", bool(GITHUB_TOKEN))
+        print("GITHUB_TOKEN length:", len(GITHUB_TOKEN) if GITHUB_TOKEN else 0)
         self.github = Github(GITHUB_TOKEN)
 
     def get_repository(self, repository_name: str):
