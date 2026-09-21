@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./App.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface ReviewIssue {
   severity: string;
   category: string;
@@ -87,7 +89,7 @@ function App() {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const response = await fetch(
-          `http://127.0.0.1:8000/review/${jobId}`
+          `${API_URL}/review/${jobId}`
         );
 
         const data: JobResponse =
@@ -143,7 +145,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/review",
+        `${API_URL}/review`,
         {
           method: "POST",
 
@@ -325,54 +327,52 @@ function App() {
 
                 {agents.map((agent) => {
 
-                                const isRunning =
-                                  jobStatus === agent.runningStatus;
+                  const isRunning =
+                    jobStatus === agent.runningStatus;
 
-                                const isCompleted =
-                                  jobStatus === agent.completedStatus ||
-                                  result !== null;
+                  const isCompleted =
+                    jobStatus === agent.completedStatus ||
+                    result !== null;
 
-                                return (
-                                  <div
-                                      className={`agent ${
-                                        jobStatus === "review_running"
-                                          ? "agent-running"
-                                          : jobStatus === "review_completed" ||
-                                            result !== null
-                                          ? "agent-completed"
-                                          : "agent-pending"
-                                      }`}
-                                    >
+                  return (
+                    <div
+                      className={`agent ${
+                        jobStatus === "review_running"
+                          ? "agent-running"
+                          : jobStatus === "review_completed" ||
+                            result !== null
+                          ? "agent-completed"
+                          : "agent-pending"
+                      }`}
+                      key={agent.key}
+                    >
 
-                                      <div className="agent-check">
+                      <div className="agent-check">
 
-                                        {jobStatus === "review_running"
-                                          ? "⟳"
-                                          : jobStatus === "review_completed" ||
-                                            result !== null
-                                          ? "✓"
-                                          : "○"}
+                        {jobStatus === agent.runningStatus
+                          ? "⟳"
+                          : jobStatus === agent.completedStatus ||
+                            result !== null
+                          ? "✓"
+                          : "○"}
 
-                                      </div>
+                      </div>
 
-                                      <strong>
-                                        Review Agent
-                                      </strong>
+                      <strong>
+                        {agent.name}
+                      </strong>
 
-                                      <p>
+                      <p>
+                        {isRunning
+                          ? "Running..."
+                          : isCompleted
+                          ? "Completed"
+                          : "Waiting..."}
+                      </p>
 
-                                        {jobStatus === "review_running"
-                                          ? "Combining findings..."
-                                          : jobStatus === "review_completed" ||
-                                            result !== null
-                                          ? "Completed"
-                                          : "Waiting..."}
-
-                                      </p>
-
-                                    </div>
-                                );
-                              })}
+                    </div>
+                  );
+                })}
 
                 <div className="agent review-agent">
 
